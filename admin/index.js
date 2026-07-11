@@ -1,111 +1,53 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzNW0Cr54co6OI3de5B6zMDtUB9qFw1hkl7vUQ2U6Y9rXTVLa2p7qh9OB6rVYy2xGVlyQ/exec";
-let localCache = [];
+// Target verification values
+const TARGET_USER = "admin";
+// SHA-256 hash representation of your master administrative passphrase key
+const TARGET_PASS_HASH =
+  "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // Default text signature value of: "admin123"
 
-function switchTab(targetTab) {
-  const tabs = ["inventory", "scanner", "config"];
-  tabs.forEach((tab) => {
-    const section = document.getElementById(`tab-${tab}`);
-    const button = document.getElementById(`tab-btn-${tab}`);
-
-    if (tab === targetTab) {
-      section.classList.remove("hidden");
-      button.className =
-        "text-indigo-400 border-b-2 border-indigo-500 pb-3 px-1 font-bold";
-    } else {
-      section.classList.add("hidden");
-      button.className =
-        "text-gray-400 hover:text-gray-200 pb-3 px-1 transition-colors";
-    }
-  });
+// Helper function to convert text strings to a cryptographic SHA-256 hexadecimal string
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function toggleModal(show) {
-  document.getElementById("asset-modal").classList.toggle("hidden", !show);
-  if (show) document.getElementById("asset-form").reset();
-}
+// Initial session intercept check loop execution
+document.addEventListener("DOMContentLoaded", () => {
+  if (sessionStorage.getItem("sys_auth_state") === "authorized") {
+    unlockWorkspace();
+  }
+});
 
-async function fetchInventory() {
-  try {
-    const response = await fetch(API_URL);
-    localCache = await response.json();
-    renderTable(localCache);
-    updateStats(localCache);
-  } catch (err) {
-    console.error("Admin dataset evaluation fault:", err);
+function unlockWorkspace() {
+  document.getElementById("auth-gateway").classList.add("hidden");
+  document.getElementById("admin-workspace").classList.remove("hidden");
+  // Run your initial data inventory fetch calls natively here
+  if (typeof fetchInventory === "function") {
+    fetchInventory();
   }
 }
 
-function renderTable(data) {
-  const tbody = document.getElementById("inventory-table");
-  tbody.innerHTML = data
-    .map(
-      (book) => `
-        <tr class="hover:bg-gray-800/30 transition-colors">
-            <td class="p-4 font-bold text-indigo-400">${book.id || "N/A"}</td>
-            <td class="p-4 text-gray-200 font-medium">${book.title || "N/A"}</td>
-            <td class="p-4 text-gray-400">${book.author || "N/A"}</td>
-            <td class="p-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${book.status === "Available" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"}">
-                    ${book.status || "Unknown"}
-                </span>
-            </td>
-        </tr>
-    `,
-    )
-    .join("");
-}
+async function handleAdminLogin(event) {
+  event.preventDefault();
+  const userField = document.getElementById("auth-user").value.trim();
+  const passField = document.getElementById("auth-pass").value;
+  const errorAlert = document.getElementById("auth-error");
 
-function updateStats(data) {
-  document.getElementById("total-books").innerText = data.length;
-  document.getElementById("available-books").innerText = data.filter(
-    (b) => b.status === "Available",
-  ).length;
-  document.getElementById("issued-books").innerText = data.filter(
-    (b) => b.status === "Issued",
-  ).length;
-}
+  const inputHash = await sha256(passField);
 
-let searchTimeout;
-function handleSearch(query) {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    const normalized = query.toLowerCase();
-    const filtered = localCache.filter(
-      (book) =>
-        book.title?.toLowerCase().includes(normalized) ||
-        book.author?.toLowerCase().includes(normalized) ||
-        String(book.id).toLowerCase().includes(normalized),
-    );
-    renderTable(filtered);
-  }, 250);
-}
-
-async function submitAsset(e) {
-  e.preventDefault();
-  const payload = {
-    action: "add",
-    id: document.getElementById("form-id").value,
-    title: document.getElementById("form-title").value,
-    author: document.getElementById("form-author").value,
-    status: "Available",
-  };
-
-  toggleModal(false);
-  localCache.push(payload);
-  renderTable(localCache);
-  updateStats(localCache);
-
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    setTimeout(fetchInventory, 1500);
-  } catch (err) {
-    console.error("Mutation pipeline runtime failure:", err);
+  if (userField === TARGET_USER && inputHash === TARGET_PASS_HASH) {
+    errorAlert.classList.add("hidden");
+    sessionStorage.setItem("sys_auth_state", "authorized");
+    unlockWorkspace();
+  } else {
+    errorAlert.classList.remove("hidden");
+    document.getElementById("auth-pass").value = "";
+    document.getElementById("auth-pass").focus();
   }
 }
 
-window.onload = fetchInventory;
+function handleAdminLogout() {
+  sessionStorage.removeItem("sys_auth_state");
+  window.location.reload();
+}
