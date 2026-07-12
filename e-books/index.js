@@ -8,7 +8,7 @@ async function initEbooks() {
     renderEbooks(ebookCache);
   } catch (err) {
     console.error("Digital array stream initialization failure:", err);
-    document.getElementById("ebooks-grid").innerHTML = `
+    document.getElementById("ebook-grid").innerHTML = `
       <div class="col-span-full text-center py-8 text-red-400 font-mono text-xs">
         SYS_SYNC_FAILURE: Failed to route remote e-book catalog data stream.
       </div>`;
@@ -16,7 +16,7 @@ async function initEbooks() {
 }
 
 function renderEbooks(items) {
-  const grid = document.getElementById("ebooks-grid");
+  const grid = document.getElementById("ebook-grid");
   const emptyState = document.getElementById("empty-state");
 
   if (items.length === 0) {
