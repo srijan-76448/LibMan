@@ -1,19 +1,22 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzNW0Cr54co6OI3de5B6zMDtUB9qFw1hkl7vUQ2U6Y9rXTVLa2p7qh9OB6rVYy2xGVlyQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyqpEr_siBoA-xmOfy9IlQ_7kv297gj1YiT36TXaO1Y0VUdYKOTFq62OlSlrrqSSabNZg/exec";
 let ebookCache = [];
 
 async function initEbooks() {
   try {
     const response = await fetch(API_URL);
-    const data = await response.json();
-    ebookCache = data.filter((item) => item.download_url || item.url);
+    ebookCache = await response.json();
     renderEbooks(ebookCache);
   } catch (err) {
     console.error("Digital array stream initialization failure:", err);
+    document.getElementById("ebooks-grid").innerHTML = `
+      <div class="col-span-full text-center py-8 text-red-400 font-mono text-xs">
+        SYS_SYNC_FAILURE: Failed to route remote e-book catalog data stream.
+      </div>`;
   }
 }
 
 function renderEbooks(items) {
-  const grid = document.getElementById("ebook-grid");
+  const grid = document.getElementById("ebooks-grid");
   const emptyState = document.getElementById("empty-state");
 
   if (items.length === 0) {
@@ -25,15 +28,10 @@ function renderEbooks(items) {
   emptyState.classList.add("hidden");
   grid.innerHTML = items
     .map((item) => {
-      const targetUrl = item.download_url || item.url;
-      const fileExtension = targetUrl
-        .split(".")
-        .pop()
-        .toUpperCase()
-        .substring(0, 4);
-      const formatTag = ["PDF", "EPUB", "MOBI", "ZIP"].includes(fileExtension)
-        ? fileExtension
-        : "VIRTUAL";
+      // Keys are automatically normalized to lowercase snake_case by the updated script
+      const targetUrl = item.download_url || item.url || "#";
+      const fileExtension = targetUrl.split(".").pop().toUpperCase().substring(0, 4);
+      const formatTag = ["PDF", "EPUB", "MOBI", "ZIP"].includes(fileExtension) ? fileExtension : "VIRTUAL";
 
       return `
             <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between hover:border-gray-700 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-200">
@@ -42,7 +40,9 @@ function renderEbooks(items) {
                         <span class="text-[10px] text-cyan-400 bg-cyan-950/40 border border-cyan-800/30 px-2 py-0.5 rounded font-bold">
                             [${formatTag}]
                         </span>
-                        <span class="text-[10px] text-gray-600">SYS_IO_READY</span>
+                        <span class="text-[10px] ${item.status === 'Available' ? 'text-emerald-400' : 'text-amber-400'}">
+                          ${item.status ? item.status.toUpperCase() : 'UNKNOWN'}
+                        </span>
                     </div>
                     <h3 class="font-bold text-gray-100 line-clamp-2 tracking-tight pt-1 text-base leading-snug">${item.title || "Binary Object"}</h3>
                     <p class="text-xs text-gray-400 line-clamp-1">by ${item.author || "Unknown"}</p>
@@ -62,14 +62,14 @@ let searchDebounce;
 function handleEbookSearch(query) {
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
-    const cleaned = query.toLowerCase();
+    const cleaned = query.toLowerCase().trim();
     const output = ebookCache.filter(
       (item) =>
-        item.title?.toLowerCase().includes(cleaned) ||
-        item.author?.toLowerCase().includes(cleaned),
+        String(item.title || "").toLowerCase().includes(cleaned) ||
+        String(item.author || "").toLowerCase().includes(cleaned)
     );
     renderEbooks(output);
-  }, 200);
+  }, 150);
 }
 
 window.onload = initEbooks;

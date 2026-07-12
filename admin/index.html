@@ -5,12 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LibMan | Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="../imgs/icon.png">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="icon" type="image/png" href="../imgs/icon.png" />
     <link rel="stylesheet" href="index.css" />
   </head>
   <body
     class="bg-gray-950 text-gray-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200"
   >
+    <div
+      id="auth-gateway"
+      class="hidden fixed inset-0 bg-black/90 backdrop-blur flex items-center justify-center p-4 z-50"
+    >
+      <div
+        class="bg-gray-900 border border-gray-800 w-full max-w-sm rounded-xl p-6 space-y-4 text-xs"
+      >
+        <div
+          class="flex justify-between items-center border-b border-gray-800 pb-2"
+        >
+          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-100">
+            Elevated Privileges Required
+          </h3>
+          <button
+            onclick="toggleAuthGateway(false)"
+            class="text-gray-500 hover:text-gray-400 font-mono"
+          >
+            [close]
+          </button>
+        </div>
+
+        <form
+          id="auth-form"
+          onsubmit="handleLegacyLogin(event)"
+          class="space-y-3"
+        >
+          <div>
+            <label class="block text-gray-400 mb-1">Username</label>
+            <input
+              type="text"
+              id="auth-user"
+              required
+              class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-100"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Password</label>
+            <input
+              type="password"
+              id="auth-pass"
+              required
+              class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-indigo-400"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg font-bold transition-colors text-white"
+          >
+            Sign In
+          </button>
+        </form>
+
+        <div class="relative flex py-2 items-center">
+          <div class="flex-grow border-t border-gray-800"></div>
+          <span
+            class="flex-shrink mx-4 text-gray-600 uppercase tracking-widest text-[9px]"
+            >OR</span
+          >
+          <div class="flex-grow border-t border-gray-800"></div>
+        </div>
+
+        <div class="flex justify-center py-1">
+          <div id="google-login-btn"></div>
+        </div>
+
+        <div
+          id="auth-error"
+          class="hidden text-red-400 font-bold uppercase text-[10px] tracking-wide bg-red-950/30 border border-red-900/50 p-2 rounded"
+        >
+          AUTHENTICATION_FAILURE: Identity Verification Denied
+        </div>
+      </div>
+    </div>
+
     <nav
       class="border-b border-gray-800 bg-gray-900/50 backdrop-blur px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-40"
     >
@@ -48,18 +123,35 @@
           >
         </div>
       </div>
-      <div class="flex gap-3 w-full md:w-auto">
+
+      <div class="flex gap-3 w-full md:w-auto items-center">
         <button
+          id="add-asset-btn"
           onclick="toggleModal(true)"
-          class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-500 text-xs font-bold px-4 py-2 rounded-lg transition-colors"
+          class="hidden bg-indigo-600 hover:bg-indigo-500 text-xs font-bold px-4 py-2 rounded-lg transition-colors"
         >
-          ++ asset
+          Add Asset
         </button>
         <button
           onclick="fetchInventory()"
           class="flex-1 md:flex-none border border-gray-700 hover:bg-gray-800 text-xs px-4 py-2 rounded-lg transition-colors"
         >
-          sys_sync
+          Sync Database
+        </button>
+
+        <button
+          id="login-trigger-btn"
+          onclick="toggleAuthGateway(true)"
+          class="flex-1 md:flex-none bg-indigo-950 text-indigo-400 border border-indigo-900/50 text-xs font-bold px-4 py-2 rounded-lg hover:bg-indigo-900/40 transition-colors"
+        >
+          Admin Login
+        </button>
+        <button
+          id="logout-trigger-btn"
+          onclick="handleAdminLogout()"
+          class="hidden border border-red-900/40 text-red-400 text-xs px-4 py-2 rounded-lg hover:bg-red-950/20 transition-colors"
+        >
+          Logout
         </button>
       </div>
     </nav>
@@ -178,31 +270,17 @@
           class="bg-gray-950 border border-gray-800 p-4 rounded-lg space-y-3 font-mono text-xs"
         >
           <div class="flex justify-between">
-            <span class="text-gray-500">Node Status:</span>
-            <span class="text-amber-400 font-bold">[Awaiting Mobile Link]</span>
+            <span class="text-gray-500">Node Status:</span
+            ><span class="text-amber-400 font-bold"
+              >[Awaiting Mobile Link]</span
+            >
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Target Host:</span>
-            <span class="text-indigo-400 select-all"
+            <span class="text-gray-500">Target Host:</span
+            ><span class="text-indigo-400 select-all"
               >https://libman-api.local/stream</span
             >
           </div>
-        </div>
-        <div
-          class="p-10 border border-dashed border-gray-800 rounded-lg flex flex-col items-center justify-center text-center"
-        >
-          <div
-            class="w-36 h-36 bg-white rounded-lg p-2 flex items-center justify-center mb-4 select-none"
-          >
-            <div
-              class="w-full h-full border-4 border-black border-dashed flex items-center justify-center text-black font-black text-[10px]"
-            >
-              QR_CONFIG_NODE
-            </div>
-          </div>
-          <span class="text-[11px] text-gray-500"
-            >Scan parameters via LibMan physical peripheral module</span
-          >
         </div>
       </section>
 
@@ -225,33 +303,12 @@
               class="md:col-span-2 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-600 select-all focus:outline-none"
             />
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
-            <label class="text-gray-400">Cache Strategy Expiry (TTL):</label>
-            <select
-              class="md:col-span-2 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-indigo-500"
-            >
-              <option>300 Seconds (Default)</option>
-              <option>60 Seconds (Aggressive Polling)</option>
-              <option>Manual Refresh Only</option>
-            </select>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
-            <label class="text-gray-400">Concurrency Mutex Lock:</label>
-            <div class="md:col-span-2 flex items-center">
-              <input
-                type="checkbox"
-                checked
-                class="rounded bg-gray-950 border-gray-800 text-indigo-600 focus:ring-0"
-              />
-              <span class="text-emerald-400 ml-2 font-medium"
-                >Active (Collison preventative array tracing)</span
-              >
-            </div>
-          </div>
         </div>
         <div class="border-t border-gray-800 pt-4 flex justify-end">
           <button
-            class="bg-indigo-600 hover:bg-indigo-500 text-xs px-4 py-2 rounded-lg font-bold transition-colors"
+            id="config-commit-btn"
+            disabled
+            class="bg-gray-800 text-gray-500 cursor-not-allowed text-xs px-4 py-2 rounded-lg font-bold transition-colors"
           >
             Commit Configuration Matrix
           </button>
