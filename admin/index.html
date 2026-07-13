@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPEdoctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,6 +8,16 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="icon" type="image/png" href="../imgs/icon.png" />
     <link rel="stylesheet" href="index.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap");
+      * {
+        font-family: "JetBrains Mono", monospace, ui-monospace !important;
+      }
+      input:-webkit-autofill {
+        -webkit-text-fill-color: #f3f4f6;
+        -webkit-box-shadow: 0 0 0px 1000px #030712 inset;
+      }
+    </style>
   </head>
   <body
     class="bg-gray-950 text-gray-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200"
@@ -22,7 +32,10 @@
         <div
           class="flex justify-between items-center border-b border-gray-800 pb-2"
         >
-          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-100">
+          <h3
+            id="auth-title"
+            class="text-sm font-bold uppercase tracking-wider text-gray-100"
+          >
             Elevated Privileges Required
           </h3>
           <button
@@ -33,55 +46,106 @@
           </button>
         </div>
 
-        <form
-          id="auth-form"
-          onsubmit="handleLegacyLogin(event)"
-          class="space-y-3"
-        >
-          <div>
-            <label class="block text-gray-400 mb-1">Username</label>
-            <input
-              type="text"
-              id="auth-user"
-              required
-              class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-100"
-            />
-          </div>
-          <div>
-            <label class="block text-gray-400 mb-1">Password</label>
-            <input
-              type="password"
-              id="auth-pass"
-              required
-              class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-indigo-400"
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg font-bold transition-colors text-white"
+        <div id="login-mode-interface" class="space-y-4">
+          <form
+            id="auth-form"
+            onsubmit="handleLegacyLogin(event)"
+            class="space-y-3"
           >
-            Sign In
-          </button>
-        </form>
-
-        <div class="relative flex py-2 items-center">
-          <div class="flex-grow border-t border-gray-800"></div>
-          <span
-            class="flex-shrink mx-4 text-gray-600 uppercase tracking-widest text-[9px]"
-            >OR</span
-          >
-          <div class="flex-grow border-t border-gray-800"></div>
+            <div>
+              <label class="block text-gray-400 mb-1">SUDO Username</label>
+              <input
+                type="text"
+                id="auth-user"
+                required
+                class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-100"
+              />
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Access Token Key</label>
+              <input
+                type="password"
+                id="auth-pass"
+                required
+                class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-indigo-400"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg font-bold transition-colors text-white"
+            >
+              Authorize Key
+            </button>
+          </form>
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-gray-800"></div>
+            <span
+              class="flex-shrink mx-4 text-gray-600 uppercase tracking-widest text-[9px]"
+              >OR</span
+            >
+            <div class="flex-grow border-t border-gray-800"></div>
+          </div>
+          <div class="flex justify-center py-1">
+            <div id="google-login-btn"></div>
+          </div>
+          <div class="text-center pt-1">
+            <button
+              onclick="toggleAuthMode(true)"
+              class="text-indigo-400 hover:underline tracking-wide font-medium"
+            >
+              [Create New Admin Account]
+            </button>
+          </div>
         </div>
 
-        <div class="flex justify-center py-1">
-          <div id="google-login-btn"></div>
+        <div id="signup-mode-interface" class="hidden space-y-3">
+          <form
+            id="signup-form"
+            onsubmit="handleLegacySignUp(event)"
+            class="space-y-3"
+          >
+            <div>
+              <label class="block text-gray-400 mb-1">New Admin Username</label>
+              <input
+                type="text"
+                id="signup-user"
+                required
+                class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-gray-100"
+              />
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1"
+                >New Access Token Key</label
+              >
+              <input
+                type="password"
+                id="signup-pass"
+                required
+                class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-emerald-400"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg font-bold transition-colors text-white"
+            >
+              Register Credentials
+            </button>
+          </form>
+          <div class="text-center pt-2">
+            <button
+              onclick="toggleAuthMode(false)"
+              class="text-gray-400 hover:underline font-mono"
+            >
+              [Back to Login]
+            </button>
+          </div>
         </div>
 
         <div
           id="auth-error"
           class="hidden text-red-400 font-bold uppercase text-[10px] tracking-wide bg-red-950/30 border border-red-900/50 p-2 rounded"
         >
-          AUTHENTICATION_FAILURE: Identity Verification Denied
+          AUTHENTICATION_FAILURE: Action Denied
         </div>
       </div>
     </div>
@@ -133,7 +197,7 @@
           Add Asset
         </button>
         <button
-          onclick="fetchInventory()"
+          onclick="fetchInventories()"
           class="flex-1 md:flex-none border border-gray-700 hover:bg-gray-800 text-xs px-4 py-2 rounded-lg transition-colors"
         >
           Sync Database
@@ -159,161 +223,61 @@
     <main class="max-w-7xl mx-auto p-6 space-y-6">
       <div class="border-b border-gray-800 flex gap-6 text-sm">
         <button
-          onclick="switchTab('inventory')"
-          id="tab-btn-inventory"
-          class="text-indigo-400 border-b-2 border-indigo-500 pb-3 px-1 font-bold"
+          onclick="switchPartition('books')"
+          id="tab-btn-books"
+          class="text-indigo-400 border-b-2 border-indigo-500 pb-3 px-1 font-bold tracking-tight"
         >
-          Inventory Panel
+          Books Section
         </button>
         <button
-          onclick="switchTab('scanner')"
-          id="tab-btn-scanner"
-          class="text-gray-400 hover:text-gray-200 pb-3 px-1 transition-colors"
+          onclick="switchPartition('ebooks')"
+          id="tab-btn-ebooks"
+          class="text-gray-400 hover:text-gray-200 pb-3 px-1 transition-colors tracking-tight"
         >
-          Scanner Link
-        </button>
-        <button
-          onclick="switchTab('config')"
-          id="tab-btn-config"
-          class="text-gray-400 hover:text-gray-200 pb-3 px-1 transition-colors"
-        >
-          System Config
+          E-Books Section
         </button>
       </div>
 
-      <section id="tab-inventory" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl">
-            <p class="text-xs uppercase tracking-wider text-gray-500">
-              Total Catalog Assets
-            </p>
-            <p
-              id="total-books"
-              class="text-3xl font-black mt-1 text-indigo-400"
-            >
-              0
-            </p>
-          </div>
-          <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl">
-            <p class="text-xs uppercase tracking-wider text-gray-500">
-              Available Items
-            </p>
-            <p
-              id="available-books"
-              class="text-3xl font-black mt-1 text-emerald-400"
-            >
-              0
-            </p>
-          </div>
-          <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl">
-            <p class="text-xs uppercase tracking-wider text-gray-500">
-              Allocated / Out
-            </p>
-            <p
-              id="issued-books"
-              class="text-3xl font-black mt-1 text-amber-400"
-            >
-              0
-            </p>
-          </div>
+      <header class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl shadow-2xl">
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-bold">Total Catalog Assets</p>
+          <p id="total-books" class="text-3xl font-black mt-1 text-indigo-400">0</p>
         </div>
+        <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl shadow-2xl">
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-bold">Available Items</p>
+          <p id="available-books" class="text-3xl font-black mt-1 text-emerald-400">0</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 p-5 rounded-xl shadow-2xl">
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-bold">Allocated / Out</p>
+          <p id="issued-books" class="text-3xl font-black mt-1 text-amber-400">0</p>
+        </div>
+      </header>
 
-        <div class="relative">
-          <input
-            type="text"
-            id="search-bar"
-            oninput="handleSearch(this.value)"
-            placeholder="Filter inventory arrays..."
-            class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder-gray-600"
-          />
-        </div>
+      <div class="relative">
+        <input
+          type="text"
+          id="search-bar"
+          oninput="handleSearch(this.value)"
+          placeholder="Filter localized dataset indices..."
+          class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder-gray-600 shadow-2xl"
+        />
+      </div>
 
-        <div
-          class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl"
-        >
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr
-                class="border-b border-gray-800 bg-gray-900/80 text-xs font-bold uppercase tracking-wider text-gray-400"
-              >
-                <th class="p-4">Asset ID</th>
-                <th class="p-4">Title</th>
-                <th class="p-4">Author</th>
-                <th class="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody
-              id="inventory-table"
-              class="divide-y divide-gray-800/50 text-xs"
-            ></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section
-        id="tab-scanner"
-        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-2xl mx-auto space-y-4"
-      >
-        <div class="flex items-center gap-3 border-b border-gray-800 pb-4">
-          <div
-            class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"
-          ></div>
-          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-100">
-            Android Node Receiver Gateway
-          </h3>
-        </div>
-        <p class="text-xs text-gray-400 leading-relaxed">
-          Pairing bridge configuration for localized hardware scanning
-          integration arrays.
-        </p>
-        <div
-          class="bg-gray-950 border border-gray-800 p-4 rounded-lg space-y-3 font-mono text-xs"
-        >
-          <div class="flex justify-between">
-            <span class="text-gray-500">Node Status:</span
-            ><span class="text-amber-400 font-bold"
-              >[Awaiting Mobile Link]</span
-            >
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Target Host:</span
-            ><span class="text-indigo-400 select-all"
-              >https://libman-api.local/stream</span
-            >
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="tab-config"
-        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-3xl mx-auto space-y-6"
-      >
-        <h3
-          class="text-sm font-bold uppercase tracking-wider text-gray-100 border-b border-gray-800 pb-4"
-        >
-          Core System Constants
-        </h3>
-        <div class="space-y-4 text-xs">
-          <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
-            <label class="text-gray-400">Google Script URL:</label>
-            <input
-              type="password"
-              value="https://script.google.com/macros/s/.../exec"
-              disabled
-              class="md:col-span-2 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-600 select-all focus:outline-none"
-            />
-          </div>
-        </div>
-        <div class="border-t border-gray-800 pt-4 flex justify-end">
-          <button
-            id="config-commit-btn"
-            disabled
-            class="bg-gray-800 text-gray-500 cursor-not-allowed text-xs px-4 py-2 rounded-lg font-bold transition-colors"
-          >
-            Commit Configuration Matrix
-          </button>
-        </div>
-      </section>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-gray-800 bg-gray-900/80 text-xs font-bold uppercase tracking-wider text-gray-400">
+              <th class="p-4">Asset ID</th>
+              <th class="p-4">Title</th>
+              <th class="p-4">AuthorNode</th>
+              <th id="column-header-extra" class="p-4">Dynamic Metric</th>
+              <th class="p-4 text-right">Data Mutation State</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table" class="divide-y divide-gray-800/50 text-xs">
+              </tbody>
+        </table>
+      </div>
     </main>
 
     <div
@@ -323,7 +287,7 @@
       <div
         class="bg-gray-900 border border-gray-800 w-full max-w-md rounded-xl p-6 space-y-4 text-xs"
       >
-        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-100">
+        <h3 id="modal-form-title" class="text-sm font-bold uppercase tracking-wider text-gray-100">
           Ingest New Catalog Item
         </h3>
         <form id="asset-form" onsubmit="submitAsset(event)" class="space-y-4">
@@ -352,6 +316,14 @@
               id="form-author"
               required
               class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div id="form-extra-container" class="hidden">
+            <label id="form-extra-label" class="block text-gray-400 mb-1">Download URL</label>
+            <input
+              type="text"
+              id="form-extra"
+              class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-indigo-300"
             />
           </div>
           <div class="flex justify-end gap-3 pt-2">

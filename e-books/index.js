@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyqpEr_siBoA-xmOfy9IlQ_7kv297gj1YiT36TXaO1Y0VUdYKOTFq62OlSlrrqSSabNZg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyqpEr_siBoA-xmOfy9IlQ_7kv297gj1YiT36TXaO1Y0VUdYKOTFq62OlSlrrqSSabNZg/exec?stream=ebooks";
 let ebookCache = [];
 
 async function initEbooks() {
@@ -28,20 +28,27 @@ function renderEbooks(items) {
   emptyState.classList.add("hidden");
   grid.innerHTML = items
     .map((item) => {
-      // Keys are automatically normalized to lowercase snake_case by the updated script
+      // Safely resolves keys from both potential database structural formats
       const targetUrl = item.download_url || item.url || "#";
-      const fileExtension = targetUrl.split(".").pop().toUpperCase().substring(0, 4);
-      const formatTag = ["PDF", "EPUB", "MOBI", "ZIP"].includes(fileExtension) ? fileExtension : "VIRTUAL";
+      const fileExtension = targetUrl
+        .split(".")
+        .pop()
+        .toUpperCase()
+        .substring(0, 4);
+      
+      const formatTag = ["PDF", "EPUB", "MOBI", "ZIP"].includes(fileExtension)
+        ? fileExtension
+        : "FILE";
 
       return `
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between hover:border-gray-700 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-200">
+            <div class="bg-gray-900 border border-gray-800/80 rounded-xl p-5 flex flex-col justify-between shadow-xl hover:border-indigo-500/30 transition duration-200">
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] text-cyan-400 bg-cyan-950/40 border border-cyan-800/30 px-2 py-0.5 rounded font-bold">
                             [${formatTag}]
                         </span>
-                        <span class="text-[10px] ${item.status === 'Available' ? 'text-emerald-400' : 'text-amber-400'}">
-                          ${item.status ? item.status.toUpperCase() : 'UNKNOWN'}
+                        <span class="text-[10px] ${String(item.status).trim().toLowerCase() === 'available' ? 'text-emerald-400' : 'text-amber-400'} font-bold">
+                          ${item.status ? String(item.status).toUpperCase() : 'AVAILABLE'}
                         </span>
                     </div>
                     <h3 class="font-bold text-gray-100 line-clamp-2 tracking-tight pt-1 text-base leading-snug">${item.title || "Binary Object"}</h3>
@@ -65,11 +72,13 @@ function handleEbookSearch(query) {
     const cleaned = query.toLowerCase().trim();
     const output = ebookCache.filter(
       (item) =>
+        String(item.asset_id || item.id || "").toLowerCase().includes(cleaned) ||
         String(item.title || "").toLowerCase().includes(cleaned) ||
-        String(item.author || "").toLowerCase().includes(cleaned)
+        String(item.author || "").toLowerCase().includes(cleaned),
     );
     renderEbooks(output);
   }, 150);
 }
 
-window.onload = initEbooks;
+// Fire initialization cycle when DOM construction completes
+initEbooks();
